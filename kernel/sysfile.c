@@ -303,6 +303,9 @@ create(char *path, short type, short major, short minor)
       goto fail;
   }
 
+  /**NOTE - Uses dirlink() to add name and ip->inum into the dirent object of dp
+   * 1. Since dp is a directory, its block contains a dirent object
+   */
   if (dirlink(dp, name, ip->inum) < 0)
     goto fail;
 
