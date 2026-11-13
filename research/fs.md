@@ -107,3 +107,38 @@ Q4: Actually, 0x22 was there in the beginning state of the log header block, but
 
 **Note 4**:
 
+I'll leave the log blocks alone for a while because they are mostly temproary and the log blocks are entirely data which is not very interesting to me. I'll take a look of the inode blocks. The dinode (On-disk inode) has the following struct and starts at 0x8800.
+
+```C
+// On-disk inode structure
+struct dinode {
+  short type;              // File type
+  short major;             // Major device number (T_DEVICE only)
+  short minor;             // Minor device number (T_DEVICE only)
+  short nlink;             // Number of links to inode in file system
+  uint size;               // Size of file (bytes)
+  uint addrs[NDIRECT + 1]; // Data block addresses
+};
+```
+
+First I need to check how dinodes are stored on disk -- are they packed together or not? 
+
+![Sample data of the first indoe block](image-3.png)
+
+Inspecting `mkfs.c`, looks like `ialloc()` is the one that writes the inode. Note that many of the function calls are actually Linux, not xv6, as `mkfs.c` runs in the host system, not in xv6.
+
+```C
+uint
+ialloc(ushort type)
+{
+  uint inum = freeinode++;
+  struct dinode din;
+
+  bzero(&din, sizeof(din));
+  din.type = xshort(type);
+  din.nlink = xshort(1);
+  din.size = xint(0);
+  winode(inum, &din);
+  return inum;
+}
+```
