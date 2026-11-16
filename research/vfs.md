@@ -157,9 +157,22 @@ Recall, that `mount_root()` installs all pre-configured filesystem (including Mi
   s->s_op = &minix_sops;
 ```
 
-Each `struct super_operations` embeds a function pointer `void (*read_inode) (struct inode *)`. For some filesystems that do not need this function, such as NFS, it is NULL. But since Minix is a traditional Unix-style filesystem, it does have one -- the `minix_read_inode()` listed above. Note that the second function pointer, which points to `notify_change()`, is NULL for Minix.
+Each `struct super_operations` embeds a function pointer `void (*read_inode) (struct inode *)`. For some filesystems that do not need this function, such as NFS, it is NULL. But since Minix is a traditional Unix-style filesystem, it does have one -- the `minix_read_inode()` listed above. Note that the second function pointer, which points to `notify_change()`, is NULL for Minix. The VFS version of `read_inode()` is very simple. It checks whether the filesystem has its own `read_inode()` function, and call it if yes. For Minix it calls `minix_read_inode()`.
 
-`minix_read_inode()` is the function that "installs" (I really think I overused this word) the Minix inode operations. Curiously, it has 5 inode operations. The reason for that is different type of file requires different inode operations.
+```C
+// fs/inode.c
+static void read_inode(struct inode * inode)
+{
+	lock_inode(inode);
+	if (inode->i_sb && inode->i_sb->s_op && inode->i_sb->s_op->read_inode)
+		inode->i_sb->s_op->read_inode(inode);
+	unlock_inode(inode);
+}
+```
+
+Now, as a static function, `read_inode()` is only called by `__iget()`, which is in turn called by `iget()`, a wrapper function. `__iget()` is called by some (few) Minix functions -- but the majority of Minix filesystem functions use `iget()` instead. 
+
+Coming back to Minix, `minix_read_inode()` is the function that "installs" (I really think I overused this word) the Minix inode operations. Curiously, it has 5 inode operations. The reason for that is different type of file requires different inode operations.
 
 ```C
 	if (S_ISREG(inode->i_mode))
@@ -209,5 +222,40 @@ struct inode_operations minix_dir_inode_operations = {
 	NULL			/* permission */
 };
 ```
+3. The whole call chain to reach filesystem specific inode operations functions such as minix_rename(). It is a better example than minix_lookup() as lookup() doesn't seem to be a system call while sys_rename() is:
 
+This is pretty convoluted, so I'll try to be as concise as possible. The first part is always to config the kernel to include Minix as one of its filesystems. In this case we assume it is the root filesystem and everything goes well ->
+
+During `mount_root()`, it calls `minix_read_super()`, and "installs" the Minix superblock operations `minix_sops`. The kernel now has access to `minix_read_inode()` which is part of `minix_sops` whenever a `read_inode()` is called ->
+
+A user program makes the system call `rename()`. It gets routed to the VFS version of `sys_rename()`, which is a wrapper and calls `do_rename()`. Note that up until now, none of the functions we mentioned acknowledge the inode -- all `do_rename()` knows are the string of `oldname` and `newname` ->
+
+`do_rename()` calls `dir_namei()` to get the inodes. `dir_namei()` starts from two possible inodes, one is the `current->cwd`, and the other is the `current->root`. **This is the most tricky part**, as there is no indication **where and how is the i_ops gets installed** -- somehow `dir_namei()` calls `lookup()`, which immediately routes to the Minix version of `minix_lookup()`, which is part of the inode operation functions. How is the connection made?
+
+We need to check how the kernel sets up `current->cwd` and `current->root`. Both are set during `mount_root()`, and `cwd` is probably changed afterwards based on the user's workflow.
+
+```C
+		sb = read_super(ROOT_DEV,fs_type->name,root_mountflags,NULL,1);
+		//...
+			inode = sb->s_mounted;
+			//...
+			current->pwd = inode;
+			current->root = inode;
+```
+
+As we can see from the above code snippet, `sb->s_mounted` is obtained **AFTER the call to `read_super()`, which calls `minix_read_super()`**. If we inspect `minix_read_super()`, it uses `iget()` to fetch `s_mounted`. And we already know that `iget()` calls `__iget()`, which calls `s_op->read_inode()` -- that is exactly `minix_read_inode()`, and **it is `minix_read_inode()` that installs the 5 inode oeprations** for any inode passed as its argument -- in this case it is `s_mounted`.
+
+```C
+	s->s_mounted = iget(s,MINIX_ROOT_INO);
+	if (!s->s_mounted) {
+		s->s_dev = 0;
+		brelse(bh);
+		printk("MINIX-fs: get root inode failed\n");
+		return NULL;
+	}
+```
+
+Once we understand the above, let's go back to `dir_namei()`. As we said, it calls `lookup()` to bear the burden of the work. Now that the much needed Minix version of inode operations functions have been installed by `minix_read_inode()`, `lookup()` is able to check whether Minix has its own version of `lookup()`, which it does, and call `i_op->lookup()`. This is actually `minix_lookup()` ->
+
+Once the inodes have been obtained, we now need to take a step back and read `do_rename()`. At the end, it checks whether Minix has its own version of `rename()`, which it does, and call `i_op->rename()`. This is actually `minix_rename()`.
 
