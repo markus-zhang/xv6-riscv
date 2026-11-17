@@ -9,4 +9,6 @@ _*
 /kernel/kernel
 /user/usys.S
 .gdbinit
+.gdbinit.tmpl-riscv
+.gdb_history
 TAGS
