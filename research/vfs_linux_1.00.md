@@ -175,6 +175,8 @@ Now, as a static function, `read_inode()` is only called by `__iget()`, which is
 Coming back to Minix, `minix_read_inode()` is the function that "installs" (I really think I overused this word) the Minix inode operations. Curiously, it has 5 inode operations. The reason for that is different type of file requires different inode operations.
 
 ```C
+// fs/minix/inode.c
+
 	if (S_ISREG(inode->i_mode))
 		inode->i_op = &minix_file_inode_operations;
 	else if (S_ISDIR(inode->i_mode))
@@ -259,3 +261,4 @@ Once we understand the above, let's go back to `dir_namei()`. As we said, it cal
 
 Once the inodes have been obtained, we now need to take a step back and read `do_rename()`. At the end, it checks whether Minix has its own version of `rename()`, which it does, and call `i_op->rename()`. This is actually `minix_rename()`.
 
+**The key to understand the whole schema, is to understand that Linux 1.00 lets each inode embeds its own inode operations, instead of a filesystem specific "global" one. This is by my understanding more convoluted, but much more flexible and preferred.**
