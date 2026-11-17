@@ -39,3 +39,18 @@ struct inode * get_pipe_inode(void)
 
 ### First step: Move fs code into a subdirectory
 
+My pre-vfs plan:
+
+Before doing anything, commit everything in this branch, and create a new branch based on this branch. I don't want to mess around the valuable docs.
+
+**First step**, move the fs code into a subdirectory, modify `Makefile` and make sure the whole kernel compiles and runs fine. The final directory structure should be:
+
+xv6-riscv----
+            |
+            /kernel--
+                    |
+                    /fs--
+                        |
+                        (All fs code)
+
+**Second step**, figure out how to bootstrap this thing...in general, `/fs` should contain the VFS version of filesystem code, and `/fs/vsfs` should contain the VSFS code. I should also implement a file_system_type or something similar so that specific filesystems can register with the kernel.
