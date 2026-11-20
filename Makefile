@@ -28,7 +28,8 @@ OBJS = \
   $K/sysfile.o \
   $K/kernelvec.o \
   $K/plic.o \
-  $K/virtio_disk.o
+  $K/virtio_disk.o \
+	$K/fs/fshello.o
 
 # riscv64-unknown-elf- or riscv64-linux-gnu-
 # perhaps in /opt/riscv/bin
@@ -78,6 +79,8 @@ CFLAGS += -fno-builtin-free
 CFLAGS += -fno-builtin-memcpy -Wno-main
 CFLAGS += -fno-builtin-printf -fno-builtin-fprintf -fno-builtin-vprintf
 CFLAGS += -I.
+CFLAGS += -I$K
+CFLAGS += -I$K/fs
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
 
 # Disable PIE when possible (for Ubuntu 16.10 toolchain)
@@ -99,7 +102,7 @@ $K/%.o: $K/%.S
 	$(CC) -march=rv64gc -g $(DETFLAGS) -c -o $@ $<
 
 tags: $(OBJS)
-	etags kernel/*.S kernel/*.c
+	etags kernel/*.S kernel/*.c kernel/fs/*.c
 
 ULIB = $U/ulib.o $U/usys.o $U/printf.o $U/umalloc.o
 
@@ -154,11 +157,12 @@ UPROGS=\
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
 
--include kernel/*.d user/*.d
+-include kernel/*.d user/*.d kernel/fs/*.d
 
 clean: 
 	rm -f *.tex *.dvi *.idx *.aux *.log *.ind *.ilg \
 	*/*.o */*.d */*.asm */*.sym \
+	*/fs/*.o \
 	$K/kernel fs.img \
 	mkfs/mkfs .gdbinit \
         $U/usys.S \
@@ -201,4 +205,4 @@ check-qemu-version:
 
 .PHONY: fmt
 fmt:
-	clang-format -i $(wildcard kernel/*.[ch] user/*.[ch] mkfs/*.c)
+	clang-format -i $(wildcard kernel/*.[ch] user/*.[ch] mkfs/*.c kernel/fs/*.[ch])

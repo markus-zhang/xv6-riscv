@@ -1,3 +1,4 @@
+#include "fshello.h"
 #include "types.h"
 #include "param.h"
 #include "memlayout.h"
@@ -28,6 +29,7 @@ main()
     iinit();            // inode table
     fileinit();         // file table
     virtio_disk_init(); // emulated hard disk
+    fs_hello();         // test for new Makefile
     userinit();         // first user process
 
     __atomic_store_n(&started, 1, __ATOMIC_RELEASE);
