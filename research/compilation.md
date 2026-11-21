@@ -32,3 +32,11 @@ Basically, the above command expand for each .S file its .o file. It's a bit lik
 4. Why there is no .o: .c rules in the Makefile
 
 Because in `Makefile`, there is an implicit rule that says, for each `.c` file, build a `.o` file. This is so common that `Makefile` makes it as a default rule.
+
+5. The `.d` files are important
+
+They are the dependency files, so if say we move a header file to a different directory, but keep an old, stale dependency file, then the path is incorrect and a new run of gcc complains about header file not found, or no rule to build a header file that doesn't exist.
+
+6. Prevent conflict between host glibc header files and xv6 header files
+
+`mkfs.c` uses `<>` for host glibc header files, and `""` for xv6 header files. I also added `-iquote include` in the `Makefile` as the option tells it not to search the `-I` include directory if it sees a `<>` header file.

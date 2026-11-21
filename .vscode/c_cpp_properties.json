@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "name": "xv6",
+            "compilerPath": "/usr/bin/gcc",
+            "compilerArgs": [
+                // -iquote /include forces Makefile to use host glibs header files for header files enclosed in <>
+                "-iquote",
+                "${workspaceFolder}/include"
+            ],
+            "includePath": [
+                "${workspaceFolder}"
+            ],
+            "browse": {
+                "path": [
+                    "${workspaceFolder}"
+                ]
+            },
+            "cStandard": "c11",
+            "intelliSenseMode": "linux-gcc-x64"
+        }
+    ],
+    "version": 4
+}
