@@ -49,9 +49,7 @@ I decided to make a much more detailed plan for each step, because I want to min
 
       In xv6, `userinit()` creates a process and sets the root inode as its `cwd`. Then the scheduler runs and picks this process, as it is the ONLY running process after initialization.
 
-      // TODO: I don't understand where does the kernel loads the shell. It should be a user process, which I assume it is this one, but I don't see any code running shell.
-
-      Answer to TODO: So I double checked the code, and `userinit()` calls `allocproc()` which has `p->context.ra = (uint64)forkret;`. For the first user space process, `forkret()` is a bit special -- it executes `/init`.
+      I don't understand where does the kernel loads the shell. It should be a user process, which I assume it is this first one -- I then double checked the code, and `userinit()` calls `allocproc()` which has `p->context.ra = (uint64)forkret;`. For the first user space process, `forkret()` is a bit special -- it executes `/init`.
 
       ```C
         if (__atomic_load_n(&first, __ATOMIC_ACQUIRE)) {
@@ -72,7 +70,17 @@ I decided to make a much more detailed plan for each step, because I want to min
       }
       ```
 
-      `init` is a user space program. We can check its source code in `user/init.c`. It is this program that presents the shell to the user.
+      `init` is a user space program. We can check its source code in `user/init.c`. It is this program that presents the shell to the user. It makes some filesystem system calls, which I believe `p->cwd` helps to resolve --
+
+      // TODO: 2026-11-23 Please close the following TO-DOs. I put up multiple for better format but they all ask the same questions.
+
+      // TODO (head): Re-read section 3.1, 3.2 and the top part of 3.3 above. Specifically, WRITE DOWN IN A NOTEBOOK, the call chains of Linux 1.00 until the VFS takes over (kernel calls some VFS function), and the call chains of xv6 until the kernel calls some filesystem function. I need to use these two points to help me implement VFS for xv6.
+
+      // TODO (contd.): Make sure that p->cwd, the only place that the process knows about the filesystem, is indeed used in open/dup system calls at the beginning of `init.c`. AT THIS MOMENT, the kernel only has one piece of filesystem information -- the root inode (and also `itable` and `filetable`, see below). Basically I need to fully understand where the VFS should take over. My hunch is that it should take over from the `namei("/")` function call in `userinit()` because this is the first time that the kernel touches the filesystem. 
+      
+      // TODO (contd.): However, kernel's `main.c` also calls `iinit()` and `fileinit()` before `userinit()`. I believe these two should also be part of VFS -- but the question is, are these two SPECIFIC to the VFS but not to individual filesystems? I'm trying to understand, for the inode array `itable` and file array `ftable`, is it technically correct to have just one copy for ALL individual filesystems? If yes, then I can leave them as is, as moving them into VFS is trivial -- however, if not, then I need to figure out how to add one more abstraction in the VFS so that each individual filesystem has their own `itable` and `filetable`.
+
+      // TODO (contd.): I do believe that each mounted filesystem (could be of same type) should have its own `itable` and `filetable`. But xv6 doesn't even have the mount system call yet.
 
 4. Create a subdirectory `kernel/fs/vsfs` and `kernel/fs/xvfs`. All further development of additional features of the filesystem itself (not VFS), which is a separate project, should stay in `kernel/fs/xvfs`. `kernel/fs/vsfs` is the official filesystem for xv6 so should ONLY be altered according to the needs of VFS. Take the original filesystem files, and figure out how to adapt them to the VFS API.
 
