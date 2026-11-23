@@ -72,15 +72,61 @@ I decided to make a much more detailed plan for each step, because I want to min
 
       `init` is a user space program. We can check its source code in `user/init.c`. It is this program that presents the shell to the user. It makes some filesystem system calls, which I believe `p->cwd` helps to resolve --
 
-      // TODO: 2026-11-23 Please close the following TO-DOs. I put up multiple for better format but they all ask the same questions.
+      // TODO (VFS-3-00): 2026-11-23 Please start working the following TO-DOs. Record your progress, close any items that you have completed, and breakdown/modify existing items if needed.
 
-      // TODO (head): Re-read section 3.1, 3.2 and the top part of 3.3 above. Specifically, WRITE DOWN IN A NOTEBOOK, the call chains of Linux 1.00 until the VFS takes over (kernel calls some VFS function), and the call chains of xv6 until the kernel calls some filesystem function. I need to use these two points to help me implement VFS for xv6.
+      Task: As described by the TODO item. This is a pre-requisite for the next item.
 
-      // TODO (contd.): Make sure that p->cwd, the only place that the process knows about the filesystem, is indeed used in open/dup system calls at the beginning of `init.c`. AT THIS MOMENT, the kernel only has one piece of filesystem information -- the root inode (and also `itable` and `filetable`, see below). Basically I need to fully understand where the VFS should take over. My hunch is that it should take over from the `namei("/")` function call in `userinit()` because this is the first time that the kernel touches the filesystem. 
+      Hypothesis: N/A
+
+      Deliverables: N/A
+
+      // TODO (VFS-3-01): Re-read section 3.1, 3.2 and the top part of 3.3 above. Specifically, WRITE DOWN IN A NOTEBOOK, the call chains of Linux 1.00 until the VFS takes over (kernel calls some VFS function), and the call chains of xv6 until the kernel calls some filesystem function. I need to use these two points to help me implement VFS for xv6.
+
+      Task: As described by the TODO item. This is a pre-requisite for the next item.
+
+      Hypothesis: N/A
+
+      Deliverables: The call chains of Linux 1.00 until the VFS takes over (kernel calls some VFS function), and the call chains of xv6 until the kernel calls some filesystem function.
+
+      // TODO (VFS-3-02): Make sure that p->cwd, the only place that the process knows about the filesystem, is indeed used in open/dup system calls at the beginning of `init.c`. AT THIS MOMENT, the kernel only has one piece of filesystem information -- the root inode (and also `itable` and `filetable`, see below). 
+
+      Task: Trace the `open()` and `dup()` system calls made by user/init.c. Identify which filesystem-related structures they access, directly or indirectly, and which of those structures must already be initialized.
       
-      // TODO (contd.): However, kernel's `main.c` also calls `iinit()` and `fileinit()` before `userinit()`. I believe these two should also be part of VFS -- but the question is, are these two SPECIFIC to the VFS but not to individual filesystems? I'm trying to understand, for the inode array `itable` and file array `ftable`, is it technically correct to have just one copy for ALL individual filesystems? If yes, then I can leave them as is, as moving them into VFS is trivial -- however, if not, then I need to figure out how to add one more abstraction in the VFS so that each individual filesystem has their own `itable` and `filetable`.
+      Pay particular notice to `itable`, `filetable`, the root inode (pointed to by `p->cwp`).
 
-      // TODO (contd.): I do believe that each mounted filesystem (could be of same type) should have its own `itable` and `filetable`. But xv6 doesn't even have the mount system call yet.
+      Hypothesis: I believe ATM the kernel only need to know `itable` (used in `iinit()`), `filetable` (used in `fileinit()`), the root inode (pointed to by `p->cwp`) (used in `userinit()`). The kernel is able to complete the system calls. I do not miss any other filesystem components BEFORE `init.c` runs.
+
+      Deliverable: Write down evidence supporting or contradicting the hypothesis.
+
+      Findings: Not Investigated yet.
+      
+      // TODO (VFS-3-03): However, kernel's `main.c` also calls `iinit()` and `fileinit()` before `userinit()`. I believe these two should also be part of VFS -- but the question is, are these two SPECIFIC to the VFS but not to individual filesystems? I'm trying to understand, for the inode array `itable` and file array `ftable`, is it technically correct to have just one copy for ALL individual filesystems? If yes, then I can leave them as is, as moving them into VFS is trivial -- however, if not, then I need to figure out how to add one more abstraction in the VFS so that each individual filesystem has their own `itable` and `filetable`.
+
+      Task: (This is a very large TO-DO item that needs more clarification and further breakdown) Investigate whether `itable` and `filetable` must be per-filesystem, if we allow multiple TYPEs of filesystems (e.g. vsfs and minix) in xv6.
+
+      Note that this item mixes 3 subitems:
+
+      - What responsibilities do itable and ftable currently have in xv6?
+
+      - Should those responsibilities remain global, belong to filesystem types, or belong to individual mounted filesystem instances?
+      
+      - How does Linux 1.0 handle the equivalent responsibilities?
+
+      Hypothesis: Each MOUNTED filesystem needs its own `itable` and `filetable`. So the question is incorrect -- it has nothing to do with TYPEs. We can have two exactly same filesystems mounted and each needs its own copy of these two data structures.
+
+      Deliverable: Write down evidence supporting or contradicting the hypothesis. Since xv6 doesn't support sys_mount, this is essentially a two-part research: Part 1 requires thinking within the xv6 code space (For xv6 VFS, do I need to define `itable` and `filetable` for each filesystem registered, assuming I'm going to borrow the concept of `file_system_type` and filesystem registration from Linux 1.00?), and Part 2 requires a reading of filesystem mounting in Linux 1.00 because xv6 doesn't even have it.
+
+      Findings: Not Investigated yet.
+
+      // TODO (VFS-3-04): Basically I need to know, for my xv6 VFS implementation, where the VFS should take over (to be precise, where does the kernel calls a VFS layer function). My hunch is that in the current xv6 code space, should take over from the `namei("/")` function call in `userinit()` because this is the first time that the kernel touches an important part of the filesystem -- the root inode.
+
+      Task: Investigate whether I can keep `userinit()` unchanged, but rewrite `namei()` and its friends in VFS layer.
+
+      Hypothesis: I hypothesize that `userinit()` can remain unchanged if pathname-resolution responsibilities (`namei()` and its friends) are moved behind a VFS interface..
+
+      Deliverables: Write down evidence supporting or contradicting the hypothesis. Please make sure to include flowcharts, call chains to prove/contradict. No coding is needed at this stage.
+
+      Findings: Not Investigated yet.
 
 4. Create a subdirectory `kernel/fs/vsfs` and `kernel/fs/xvfs`. All further development of additional features of the filesystem itself (not VFS), which is a separate project, should stay in `kernel/fs/xvfs`. `kernel/fs/vsfs` is the official filesystem for xv6 so should ONLY be altered according to the needs of VFS. Take the original filesystem files, and figure out how to adapt them to the VFS API.
 
