@@ -72,7 +72,7 @@ I decided to make a much more detailed plan for each step, because I want to min
 
       `init` is a user space program. We can check its source code in `user/init.c`. It is this program that presents the shell to the user. It makes some filesystem system calls, which I believe `p->cwd` helps to resolve --
 
-      // TODO (VFS-3-00): 2026-11-23 Please start working the following TO-DOs. Record your progress, close any items that you have completed, and breakdown/modify existing items if needed.
+      ~~ // TODO (VFS-3-00): 2026-11-23 Please start working the following TO-DOs. Record your progress, close any items that you have completed, and breakdown/modify existing items if needed.~~
 
       Task: As described by the TODO item. This is a pre-requisite for the next item.
 
@@ -88,6 +88,33 @@ I decided to make a much more detailed plan for each step, because I want to min
 
       Deliverables: The call chains of Linux 1.00 until the VFS takes over (kernel calls some VFS function), and the call chains of xv6 until the kernel calls some filesystem function.
 
+      Findings:
+
+      In Linux 1.00 source code `main.c`, `start_kernel()`, it says:
+
+      ```C
+    	move_to_user_mode();
+      if (!fork())		/* we count on this going ok */
+        init();
+      ```
+
+      My hunch is that the kernel expects the first `fork()` to fail, then it calls `init()` to initiate the user space (?).
+
+      `mount_root()` sets the cwd of the process, as in xv6. Here is the code snippet:
+
+      ```C
+      if (sb) {
+        inode = sb->s_mounted;
+        // Some code
+        current->pwd = inode;
+        current->root = inode;
+        // Some code
+        return;
+      }
+      ```
+
+      // FUTUR-TODO: Investigate how the Linux kernel manages to call `init()` during startup.
+
       // TODO (VFS-3-02): Make sure that p->cwd, the only place that the process knows about the filesystem, is indeed used in open/dup system calls at the beginning of `init.c`. AT THIS MOMENT, the kernel only has one piece of filesystem information -- the root inode (and also `itable` and `filetable`, see below). 
 
       Task: Trace the `open()` and `dup()` system calls made by user/init.c. Identify which filesystem-related structures they access, directly or indirectly, and which of those structures must already be initialized.
@@ -98,7 +125,49 @@ I decided to make a much more detailed plan for each step, because I want to min
 
       Deliverable: Write down evidence supporting or contradicting the hypothesis.
 
-      Findings: Not Investigated yet.
+      Findings: 
+      
+      I have traced `open()` system calls. 
+
+      `open()` -> `sys_open()`, which has three fs function calls: `namei()`, `filealloc()` and `fdalloc()`. 
+
+      `filealloc()` finds an un-referenced `struct file *` in `ftable`, and increment the ref to 1. It needs to know `ftable`. This is why the kernel initializes `ftable` before `user/init.c`.
+
+      `fdalloc()` needs to know `p->ofile[]`, and the file descriptor is simply an index into that array. This array is already known during `allocproc()`, as the kernel knows the size of `ofile[NOFILE]`.
+
+      `namei()` calls `namex()`, which calls `iget()`, `idup()` and `dirlookup()`.
+
+      `iget()` needs to access `itable`. `idup()` needs to access `itable`. `dirlookup()` calls `readi()`, which reaches low level buffer system to call `bmap()`, `bread()`, etc. This is very complicated, but I don't think that individual filesystem should implement their own buffer cache code.
+
+      I have also traced `dup()` system calls.
+
+      Further study needed to find out whether individual filesystems should implement their own low level buffer cache code. In Linux 1.00. minix does implement `minix_bread()`, while ext has `ext_bread()`.
+
+      // FUTUR-TODO: Take minix and ext as two examples, compare `minix_bread()` and `ext_bread()`. Explain why they need different implementations of `bread()`?
+
+      2. Use the superblock to mount an individual filesystem. In xv6 by saying "mount" simply means `p->cwd = namei("/");`, while in Linux 1.00 it means `mount_root()`.
+
+      
+
+      // TODO (VFS-3-02A): Determine the minimum responsibilities of a new VFS initialization function, assuming two registered filesystem implementations.
+
+      // TODO (VFS-3-02B): Investigate how the selected filesystem could provide its root inode to the VFS, and how the kernel could obtain it. 
+
+      Deliverables:
+      1. A call-chain diagram of the proposed initialization.
+      2. A list of the minimum responsibilities of the VFS.
+      3. A list of existing xv6 functions that may require changes.
+      4. An explanation of how to verify that either registered filesystem can be selected and initialized.
+    
+      Stop condition:
+      I can explain how the selected filesystem's root inode becomes available to userinit(), without depending on filesystem-specific code in userinit().
+    
+      Scope:
+      No sys_mount(), multiple mounts, or device-driver modifications.
+      Do not investigate general VFS operations yet.
+    
+      Findings: Not investigated yet.
+
       
       // TODO (VFS-3-03): However, kernel's `main.c` also calls `iinit()` and `fileinit()` before `userinit()`. I believe these two should also be part of VFS -- but the question is, are these two SPECIFIC to the VFS but not to individual filesystems? I'm trying to understand, for the inode array `itable` and file array `ftable`, is it technically correct to have just one copy for ALL individual filesystems? If yes, then I can leave them as is, as moving them into VFS is trivial -- however, if not, then I need to figure out how to add one more abstraction in the VFS so that each individual filesystem has their own `itable` and `filetable`.
 
@@ -118,7 +187,7 @@ I decided to make a much more detailed plan for each step, because I want to min
 
       Findings: Not Investigated yet.
 
-      // TODO (VFS-3-04): Basically I need to know, for my xv6 VFS implementation, where the VFS should take over (to be precise, where does the kernel calls a VFS layer function). My hunch is that in the current xv6 code space, should take over from the `namei("/")` function call in `userinit()` because this is the first time that the kernel touches an important part of the filesystem -- the root inode.
+      // TODO (VFS-3-04): Basically I need to know, for my xv6 VFS implementation, where existing xv6 filesystem operations should begin calling the new VFS interface. My hunch is that in the current xv6 code space, should take over from the `namei("/")` function call in `userinit()` because this is the first time that the kernel touches an important part of the filesystem -- the root inode.
 
       Task: Investigate whether I can keep `userinit()` unchanged, but rewrite `namei()` and its friends in VFS layer.
 
