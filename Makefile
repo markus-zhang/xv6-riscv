@@ -1,4 +1,5 @@
 K=kernel
+F=kernel/fs
 U=user
 I=include
 
@@ -19,18 +20,20 @@ OBJS = \
   $K/trap.o \
   $K/syscall.o \
   $K/sysproc.o \
-  $K/bio.o \
-  $K/fs.o \
-  $K/log.o \
   $K/sleeplock.o \
-  $K/file.o \
   $K/pipe.o \
   $K/exec.o \
-  $K/sysfile.o \
   $K/kernelvec.o \
   $K/plic.o \
-  $K/virtio_disk.o \
-	$K/fs/fshello.o
+  $F/virtio_disk.o \
+	$F/fshello.o \
+  $F/fs.o \
+	$F/sysfile.o \
+  $F/file.o \
+  $F/bio.o \
+  $F/log.o \
+
+
 
 # riscv64-unknown-elf- or riscv64-linux-gnu-
 # perhaps in /opt/riscv/bin

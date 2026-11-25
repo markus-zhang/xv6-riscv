@@ -154,6 +154,13 @@ I decided to make a much more detailed plan for each step, because I want to min
       // TODO (VFS-3-02B): Investigate how the selected filesystem could provide its root inode to the VFS, and how the kernel could obtain it. 
 
       Deliverables:
+
+      Coding: Let's do some coding this time. 
+      - Move code into kernel/fs, modify `Makefile` and compile once
+      - Create file_system_type object based on the Linux 1.00 design
+      - Add startup code to mimic `mount_root()`, but simpilied, in `userinit()`
+
+
       1. A call-chain diagram of the proposed initialization.
       2. A list of the minimum responsibilities of the VFS.
       3. A list of existing xv6 functions that may require changes.
