@@ -1,9 +1,9 @@
-#include "fs.h"
 #include "types.h"
 #include "param.h"
 #include "memlayout.h"
 #include "riscv.h"
 #include "defs.h"
+#include "fs.h"
 
 extern struct fstype filesystems[];
 
@@ -36,7 +36,7 @@ main()
     // Test VFS
     for (int a = 0; filesystems[a].read_super; a++)
     {
-      printk(filesystems[a].fsname);
+      printk("%s\n", filesystems[a].fsname);
     }
 
     userinit();         // first user process

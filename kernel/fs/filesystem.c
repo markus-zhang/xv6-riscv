@@ -1,6 +1,6 @@
-#include "fs.h"
 #include "types.h"
 #include "param.h"
+#include "fs.h"
 
 #define NINODES 200
 
@@ -12,9 +12,9 @@ struct fstype filesystems[] = {
 // A very simple implementation of read_super:
 // Just return the same superblock for all filesystems.
 // For now, I plan to implement 2 filesystems -- both are same except for the name.
-struct superblock * read_super(char *fsname)
+struct superblock read_super(char *fsname)
 {
-  struct superblock * s;
+  struct superblock s;
 
   int nbitmap = FSSIZE / BPB + 1;
   int ninodeblocks = NINODES / IPB + 1;
@@ -25,14 +25,14 @@ struct superblock * read_super(char *fsname)
   nmeta = 2 + nlog + ninodeblocks + nbitmap;
   nblocks = FSSIZE - nmeta;
 
-  s->magic = FSMAGIC;
-  s->size = FSSIZE;
-  s->nblocks = nblocks;
-  s->ninodes = NINODES;
-  s->nlog = nlog;
-  s->logstart = 2;
-  s->inodestart = 2 + nlog;
-  s->bmapstart = 2 + nlog + ninodeblocks;
+  s.magic = FSMAGIC;
+  s.size = FSSIZE;
+  s.nblocks = nblocks;
+  s.ninodes = NINODES;
+  s.nlog = nlog;
+  s.logstart = 2;
+  s.inodestart = 2 + nlog;
+  s.bmapstart = 2 + nlog + ninodeblocks;
 
   return s;
 

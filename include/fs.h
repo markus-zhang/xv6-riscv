@@ -38,11 +38,11 @@ struct dinode {
   uint addrs[NDIRECT + 1]; // Data block addresses
 };
 
-struct superblock * read_super(char *fsname);
+struct superblock read_super(char *fsname);
 
 struct fstype
 {
-  struct superblock *(*read_super) (char *);
+  struct superblock (*read_super) (char *);
   char *fsname;
 };
 
