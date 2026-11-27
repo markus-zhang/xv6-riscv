@@ -38,6 +38,16 @@ struct dinode {
   uint addrs[NDIRECT + 1]; // Data block addresses
 };
 
+struct superblock * read_super(char *fsname);
+
+struct fstype
+{
+  struct superblock *(*read_super) (char *);
+  char *fsname;
+};
+
+struct fstype *getfstype(char *name);
+
 // Inodes per block.
 #define IPB (BSIZE / sizeof(struct dinode))
 

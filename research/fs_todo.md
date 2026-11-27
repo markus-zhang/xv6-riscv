@@ -156,8 +156,9 @@ I decided to make a much more detailed plan for each step, because I want to min
       Deliverables:
 
       Coding: Let's do some coding this time. 
-      - Move code into kernel/fs, modify `Makefile` and compile once
-      - Create file_system_type object based on the Linux 1.00 design
+      - ~~Move code into kernel/fs, modify `Makefile` and compile once~~
+      - ~~Create file_system_type object based on the Linux 1.00 design~~
+      - Figure out a way to compile the code -> Add some code in `main.c` to print the two filesystem names ("xvfs" and "xvfs1")
       - Add startup code to mimic `mount_root()`, but simpilied, in `userinit()`
 
 

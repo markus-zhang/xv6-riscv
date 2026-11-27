@@ -1,9 +1,11 @@
-#include "fshello.h"
+#include "fs.h"
 #include "types.h"
 #include "param.h"
 #include "memlayout.h"
 #include "riscv.h"
 #include "defs.h"
+
+extern struct fstype filesystems[];
 
 volatile static int started = 0;
 
@@ -29,7 +31,14 @@ main()
     iinit();            // inode table
     fileinit();         // file table
     virtio_disk_init(); // emulated hard disk
-    fs_hello();         // test for new Makefile
+    // fs_hello();         // test for new Makefile
+
+    // Test VFS
+    for (int a = 0; filesystems[a].read_super; a++)
+    {
+      printk(filesystems[a].fsname);
+    }
+
     userinit();         // first user process
 
     __atomic_store_n(&started, 1, __ATOMIC_RELEASE);

@@ -26,7 +26,7 @@ OBJS = \
   $K/kernelvec.o \
   $K/plic.o \
   $F/virtio_disk.o \
-	$F/fshello.o \
+	$F/filesystem.o \
   $F/fs.o \
 	$F/sysfile.o \
   $F/file.o \
