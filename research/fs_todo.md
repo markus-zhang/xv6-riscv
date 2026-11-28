@@ -158,8 +158,26 @@ I decided to make a much more detailed plan for each step, because I want to min
       Coding: Let's do some coding this time. 
       - ~~Move code into kernel/fs, modify `Makefile` and compile once~~
       - ~~Create file_system_type object based on the Linux 1.00 design~~
-      - Figure out a way to compile the code -> Add some code in `main.c` to print the two filesystem names ("xvfs" and "xvfs1")
+      - ~~Figure out a way to compile the code -> Add some code in `main.c` to print the two filesystem names ("xvfs" and "xvfs1")~~
       - Add startup code to mimic `mount_root()`, but simpilied, in `userinit()`
+
+      // TODO: I need to figure out what does *_read_super() exactly does, because I want to implement something similar but significantly simpler in xv6 vfsinit(). Read minix_read_super() to figure out, and go back to vfsinit() to implement it.
+      
+      Question: Is namei() is the first filesystem function to convert to VFS?
+
+      Answer: No, It is not. The fsinit() is the first one. Call chain: 
+        `userinit()`->`allocproc()`->`forkret()`->`fsinit()`
+
+      Question: How does Linux 1.00 find out which filesystem matches the dev?
+
+      Answer: The whole call chain is:
+      `init()`->`setup()`->`sys_setup()`->`mount_root()`->loop through each `*_read_super()`->Once one superblock is read successfully, return.
+
+      Question: How should xv6's VFS recognize a certain type of filesystem on disk?
+
+      Answer: look at `fsinit()`. Basically it calls `readsb()` to read a super block and initializes the log.
+
+        - TODO: In xv6, when was the super block first used? I need to know this, because the VFS starts with read_super() which returns the super block.
 
 
       1. A call-chain diagram of the proposed initialization.

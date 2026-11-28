@@ -11,7 +11,7 @@
 // mkfs computes the super block and builds an initial file system. The
 // super block describes the disk layout:
 struct superblock {
-  uint magic;      // Must be FSMAGIC
+  uint magic;      // Must be XVFSMAGIC
   uint size;       // Size of file system image (blocks)
   uint nblocks;    // Number of data blocks
   uint ninodes;    // Number of inodes.
@@ -21,7 +21,8 @@ struct superblock {
   uint bmapstart;  // Block number of first free map block
 };
 
-#define FSMAGIC 0x10203040
+#define XVFSMAGIC 0x10203040
+#define VSFSMAGIC 0x40302010
 
 #define NDIRECT   12
 #define NINDIRECT (BSIZE / sizeof(uint))

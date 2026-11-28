@@ -120,7 +120,7 @@ main(int argc, char *argv[])
   nblocks = FSSIZE - nmeta;
 
   /**NOTE - Building up the superblock, which contains the metadata of the FS */
-  sb.magic = FSMAGIC;
+  sb.magic = XVFSMAGIC;
   sb.size = xint(FSSIZE);
   sb.nblocks = xint(nblocks);
   sb.ninodes = xint(NINODES);

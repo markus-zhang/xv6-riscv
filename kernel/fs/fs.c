@@ -26,9 +26,34 @@
 // only one device
 struct superblock sb;
 
+// VFS Project
+extern struct fstype filesystems[];
+
 // Read the super block.
 static void
 readsb(int dev, struct superblock *sb)
+{
+  struct buf *bp;
+
+  bp = bread(dev, 1);
+  memmove(sb, bp->data, sizeof(*sb));
+  brelse(bp);
+}
+
+// VFS Project: Remove the static status as filesystem.c needs to reference it
+void
+xvfs_readsb(int dev, struct superblock *sb)
+{
+  struct buf *bp;
+
+  bp = bread(dev, 1);
+  memmove(sb, bp->data, sizeof(*sb));
+  brelse(bp);
+}
+
+// VFS Project: Remove the static status as filesystem.c needs to reference it
+void
+vsfs_readsb(int dev, struct superblock *sb)
 {
   struct buf *bp;
 
@@ -42,10 +67,52 @@ void
 fsinit(int dev)
 {
   readsb(dev, &sb);
-  if (sb.magic != FSMAGIC)
+  if (sb.magic != XVFSMAGIC)
     panic("invalid file system");
   initlog(dev, &sb);
   ireclaim(dev);
+}
+
+/**
+ * VFS project: Init VFS 
+ * Return the correct superblock as sb
+ */ 
+void
+vfsinit(int dev)
+{
+  /*
+    Should be something like this:
+    for each fstype in filesystems[]
+    {
+      fstype.read_super()
+    }
+  */
+
+  struct fstype *fs;
+  // Interesting that you can simply point a fstype * to filesystems and grab it
+  // C is amazing.
+  for (fs = filesystems; fs->read_super; fs++)
+  {
+    // Now that we do NOT have a supoerblock *, what do we do?
+    // Linux 1.00 calls *_read_super(), what do they do actually?
+  }
+
+  // readsb(dev, &sb);
+  // switch (sb.magic)
+  // {
+  //   case XVFSMAGIC:
+  //   {
+
+  //   }
+  //   case VSFSMAGIC:
+  //   {
+
+  //   }
+  //   default:
+  //   {
+  //     panic("invalid file system");
+  //   }
+  // }
 }
 
 // Zero a block.
