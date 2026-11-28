@@ -162,6 +162,8 @@ I decided to make a much more detailed plan for each step, because I want to min
       - Add startup code to mimic `mount_root()`, but simpilied, in `userinit()`
 
       // TODO: I need to figure out what does *_read_super() exactly does, because I want to implement something similar but significantly simpler in xv6 vfsinit(). Read minix_read_super() to figure out, and go back to vfsinit() to implement it.
+
+      
       
       Question: Is namei() is the first filesystem function to convert to VFS?
 

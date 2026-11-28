@@ -36,8 +36,8 @@ int             filestat(struct file*, uint64 addr);
 int             filewrite(struct file*, uint64, int n);
 
 // fs.c
-void            xvfs_readsb(int, struct superblock *);
-void            vsfs_readsb(int, struct superblock *);
+int             xvfs_readsb(int, struct superblock *);
+int             vsfs_readsb(int, struct superblock *);
 void            fsinit(int);
 // VFS project
 void            vfsinit(int);

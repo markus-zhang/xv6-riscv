@@ -10,6 +10,7 @@
 //
 // mkfs computes the super block and builds an initial file system. The
 // super block describes the disk layout:
+// TODO: VFS Project - superblock should include a union for all individual filesystems so that *_readsb() or fsinit() can write data into. Check Linux 1.00 struct super_block for ideas.
 struct superblock {
   uint magic;      // Must be XVFSMAGIC
   uint size;       // Size of file system image (blocks)
@@ -39,11 +40,11 @@ struct dinode {
   uint addrs[NDIRECT + 1]; // Data block addresses
 };
 
-struct superblock read_super(char *fsname);
+// struct superblock read_super(char *fsname);
 
 struct fstype
 {
-  struct superblock (*read_super) (char *);
+  int (*read_super) (int dev);
   char *fsname;
 };
 

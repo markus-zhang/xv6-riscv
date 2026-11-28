@@ -26,6 +26,9 @@
 // only one device
 struct superblock sb;
 
+// VFS Project: Separate sb pointer just in case
+// struct superblock * super_block;
+
 // VFS Project
 extern struct fstype filesystems[];
 
@@ -41,7 +44,7 @@ readsb(int dev, struct superblock *sb)
 }
 
 // VFS Project: Remove the static status as filesystem.c needs to reference it
-void
+int
 xvfs_readsb(int dev, struct superblock *sb)
 {
   struct buf *bp;
@@ -52,7 +55,7 @@ xvfs_readsb(int dev, struct superblock *sb)
 }
 
 // VFS Project: Remove the static status as filesystem.c needs to reference it
-void
+int
 vsfs_readsb(int dev, struct superblock *sb)
 {
   struct buf *bp;
@@ -88,13 +91,27 @@ vfsinit(int dev)
     }
   */
 
-  struct fstype *fs;
-  // Interesting that you can simply point a fstype * to filesystems and grab it
-  // C is amazing.
-  for (fs = filesystems; fs->read_super; fs++)
+  // struct fstype *fs;
+
+  for (int i = 0; i <= 1; i++)
   {
     // Now that we do NOT have a supoerblock *, what do we do?
     // Linux 1.00 calls *_read_super(), what do they do actually?
+    // Since my *_readsb functions do not return pointers, I decided to let them return an integer to indicate success or fail
+    struct fstype fs = filesystems[i];
+
+    if (fs.read_super(dev))
+    {
+      // We need to tell the kernel which fs is valid
+      // TODO: Research what is the impact if sb contains an extra field that tells the kernel which fs it is -- Linux 1.00 has a UNION but let's start with a char *
+      
+      // TODO: What should I do with struct fstype fs? Looks like it's useless now...
+    }
+
+    // TODO: This need more work, because sb is the same for every individual filesystem
+    initlog(dev, &sb);
+    ireclaim(dev);
+
   }
 
   // readsb(dev, &sb);
